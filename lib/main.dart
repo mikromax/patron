@@ -6,7 +6,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'screens/config_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/config_service.dart';
-
+import 'package:syncfusion_flutter_core/core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -16,7 +17,7 @@ class MyHttpOverrides extends HttpOverrides {
 
 void main() async {
   HttpOverrides.global = MyHttpOverrides();
-  WidgetsFlutterBinding.ensureInitialized();
+  var ensureInitialized = WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR', null);
 
   final configService = ConfigService();

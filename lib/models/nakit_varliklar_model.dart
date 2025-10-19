@@ -1,9 +1,7 @@
-// lib/models/nakit_varliklar_model.dart
-
 class NakitVarliklar {
   List<Detail> details;
 
-  double get totalAmountTl => details.fold(0, (sum, item) => sum + item.amountTl);
+  double get totalAmountTl => details.fold(0.0, (sum, item) => sum + item.amountTl);
 
   NakitVarliklar({required this.details});
 
@@ -15,12 +13,14 @@ class NakitVarliklar {
 }
 
 class Detail {
+  final String code; // YENİ EKLENEN ALAN
   final String definition;
   final String currency;
   final double amountOriginal;
   final double amountTl;
 
   Detail({
+    required this.code, // YENİ EKLENEN ALAN
     required this.definition,
     required this.currency,
     required this.amountOriginal,
@@ -29,10 +29,11 @@ class Detail {
 
   factory Detail.fromJson(Map<String, dynamic> json) {
     return Detail(
-      definition: json['definition'],
-      currency: json['currency'],
-      amountOriginal: json['amount_original'],
-      amountTl: json['amount_tl'],
+      code: json['code'] as String, // YENİ EKLENEN ALAN
+      definition: json['definition'] as String,
+      currency: json['currency'] as String,
+      amountOriginal: (json['amount_original'] as num).toDouble(),
+      amountTl: (json['amount_tl'] as num).toDouble(),
     );
   }
 }
