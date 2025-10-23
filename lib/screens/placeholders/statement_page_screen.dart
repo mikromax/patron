@@ -162,7 +162,7 @@ class _StatementPageScreenState extends State<StatementPageScreen> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<LookupItem>(
-            value: _selectedGroup,
+            initialValue: _selectedGroup,
             decoration: const InputDecoration(labelText: 'Grup', border: OutlineInputBorder()),
             items: _groupOptions.map((item) {
               return DropdownMenuItem<LookupItem>(

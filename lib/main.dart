@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../models/api_config_model.dart';
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
@@ -6,8 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'screens/config_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/config_service.dart';
-import 'package:syncfusion_flutter_core/core.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:uuid/uuid.dart';
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -17,11 +17,32 @@ class MyHttpOverrides extends HttpOverrides {
 
 void main() async {
   HttpOverrides.global = MyHttpOverrides();
+
   var ensureInitialized = WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR', null);
 
   final configService = ConfigService();
   final authService = AuthService();
+List<ApiConfig> configs = await configService.getConfigs();
+  
+
+  // 2. Eğer hiç konfigürasyon yoksa, "Demo" profilini oluştur.
+  if (configs.isEmpty) {
+    final demoConfig = ApiConfig(
+      id: Uuid().v4(),
+      nickname: 'Demo',
+      url: 'https://api.mikromax.com.tr',
+    );
+    
+    // Yeni listeyi oluştur ve kaydet.
+    configs.add(demoConfig);
+    await configService.saveConfigs(configs);
+    
+    // Bu yeni "Demo" profilini varsayılan olarak ayarla.
+    await configService.saveDefaultConfigId(demoConfig.id);
+   
+  }
+
 
   // 1. Config var mı?
   final defaultConfigId = await configService.getDefaultConfigId();

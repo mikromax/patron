@@ -8,6 +8,19 @@ import '../models/account_transaction_statement_dto.dart';
 import '../models/statement_detail_model.dart';
 import '../models/account_credit_debit_status_dto.dart';
 import '../models/get_account_credit_debit_status_query.dart';
+import '../models/inventory_status_dto.dart';
+import '../models/get_inventory_status_query.dart';
+import '../models/bank_credits_vm.dart';
+import '../models/get_bank_credits_query.dart';
+import '../models/nonecash_assets_vm.dart';
+import '../models/get_nonecash_assets_query.dart';
+import '../models/orders_by_customer_vm.dart';
+import '../models/base_card_view_model.dart';
+import '../models/get_all_orders_by_customer_query.dart';
+import '../models/cancel_with_quantity_command.dart';
+import '../models/approve_with_quantity_command.dart';
+import '../models/balance_aging_chart_vm.dart';
+import '../models/get_account_balance_aging_chart_query.dart';
 class ApiService {
   final _configService = ConfigService();
   final _authService = AuthService();
@@ -53,6 +66,209 @@ class ApiService {
       throw Exception('API Sunucu Hatası: ${response.statusCode}\nYanıt: $responseBody');
     }
   }
+  Future<List<BalanceAgingChartVM>> getAccountBalanceAgingChart(GetAccountBalanceAgingChartQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/FinancialOperations/GetAccountBalanceAgingChart'
+        : '${config.url}/mikro/FinancialOperations/GetAccountBalanceAgingChart';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => BalanceAgingChartVM.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+Future<List<BaseCardViewModel>> getOrderCancelReasons() async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/Order/GetOrderCancelResons' // Adres Resons -> Reasons olabilir, API'den teyit edin
+        : '${config.url}/mikro/Order/GetOrderCancelResons';
+    
+    final uri = Uri.parse(baseUrl); // Parametre yok
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => BaseCardViewModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+Future<List<OrdersByCustomerVM>> searchOrdersByCustomer(GetAllOrdersByCustomerQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/Order/SearchOrdersByCustomer'
+        : '${config.url}/mikro/Order/SearchOrdersByCustomer';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => OrdersByCustomerVM.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+Future<bool> cancelOrderWithQuantity(CancelWithQuantityCommand command) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final urlString = config.url.endsWith('/')
+        ? '${config.url}mikro/SalesOrders/CancelWithQuantity'
+        : '${config.url}/mikro/SalesOrders/CancelWithQuantity';
+    
+    final headers = {
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Authorization': 'Bearer $token',
+    };
+    
+    final body = jsonEncode(command.toJson());
+
+    final response = await http.post(Uri.parse(urlString), headers: headers, body: body);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel.fromJson(jsonResponse); // Unit döndüğü için <T> belirtmeye gerek yok
+      if (resultModel.isSuccessful) {
+        return true;
+      } else {
+        throw Exception(resultModel.errors.join('\n'));
+      }
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+  Future<bool> approveOrderWithQuantity(ApproveWithQuantityCommand command) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final urlString = config.url.endsWith('/')
+        ? '${config.url}mikro/SalesOrders/ApproveWithQuantity'
+        : '${config.url}/mikro/SalesOrders/ApproveWithQuantity';
+    
+    final headers = {
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Authorization': 'Bearer $token',
+    };
+    
+    final body = jsonEncode(command.toJson());
+
+    final response = await http.post(Uri.parse(urlString), headers: headers, body: body);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel.fromJson(jsonResponse);
+      if (resultModel.isSuccessful) {
+        return true;
+      } else {
+        throw Exception(resultModel.errors.join('\n'));
+      }
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+Future<List<NonecashAssetsVM>> getNoneCashAssets(GetNoneCashAssetsQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null) throw Exception('Giriş yapılmamış (Token bulunamadı).');
+    if (config == null) throw Exception('API yapılandırması bulunamadı.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/MikroCashAsstesInfo/GetNoneCashAssets'
+        : '${config.url}/mikro/MikroCashAsstesInfo/GetNoneCashAssets';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => NonecashAssetsVM.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+Future<List<BankCreditsVM>> getBankCredits(GetBankCreditsQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null) throw Exception('Giriş yapılmamış (Token bulunamadı).');
+    if (config == null) throw Exception('API yapılandırması bulunamadı.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/MikroCashAsstesInfo/GetBankCredits'
+        : '${config.url}/mikro/MikroCashAsstesInfo/GetBankCredits';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => BankCreditsVM.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+
    Future<List<StatementDetailModel>>  getAccountStatement(AccountTransactionStatementDto dto) async {
     final token = await _authService.getToken();
     final config = await _configService.getDefaultConfig();
@@ -135,35 +351,38 @@ Future<List<AccountCreditDebitStatusDto>> getAccountCreditDebitStatus(GetAccount
     if (token == null) throw Exception('Giriş yapılmamış (Token bulunamadı).');
     if (config == null) throw Exception('API yapılandırması bulunamadı.');
 
-    final urlString = config.url.endsWith('/')
+    // 1. Temel URL'yi oluştur.
+    final baseUrl = config.url.endsWith('/')
         ? '${config.url}ai/AiFunctions/GetAiQueryResult'
         : '${config.url}/ai/AiFunctions/GetAiQueryResult';
     
+    // 2. Dart'ın Uri sınıfını kullanarak URL'yi parametrelerle güvenli bir şekilde oluştur.
+    //    C# tarafındaki parametre adının 'prompt' olduğunu varsayıyoruz.
+    final uri = Uri.parse(baseUrl).replace(
+     queryParameters: {
+        // ÖNEMLİ: 'Prompt' kelimesi, C#'taki GenerateSqlFromPromptQuery
+        // sınıfının içindeki özelliğin adıyla BİREBİR AYNI olmalıdır.
+        // Eğer C#'taki ad farklıysa, burayı da ona göre değiştirin.
+        'UserPrompt': userPrompt,
+     },
+    );
+
     final headers = {
       'Content-Type': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token',
     };
 
-    // API'ye sadece kullanıcı sorusunu içeren bir JSON gönderiyoruz
-    final body = jsonEncode({
-      'prompt': userPrompt,
-    });
-
-    final response = await http.post(
-      Uri.parse(urlString),
+    // 3. POST yerine GET kullan. Body göndermiyoruz.
+    final response = await http.get(
+      uri,
       headers: headers,
-      body: body,
     );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      
-      // Dönen verinin ResultModel<List<dynamic>> olduğunu varsayıyoruz.
-      // Her bir eleman bir Map<String, dynamic> (yani bir satır) olacak.
       final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
 
       if (resultModel.isSuccessful && resultModel.result != null) {
-        // Gelen listeyi List<Map<String, dynamic>> tipine dönüştürüyoruz
         return resultModel.result!.cast<Map<String, dynamic>>();
       } else {
         throw Exception(resultModel.errors.isNotEmpty ? resultModel.errors.join('\n') : "API'deki AI servisinden başarısız yanıt döndü.");
@@ -172,5 +391,37 @@ Future<List<AccountCreditDebitStatusDto>> getAccountCreditDebitStatus(GetAccount
       throw Exception('AI Gateway API Hatası: ${response.statusCode}');
     }
   }
+  Future<List<InventoryStatusDto>> getInventoryStatus(GetInventoryStatusQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null) throw Exception('Giriş yapılmamış (Token bulunamadı).');
+    if (config == null) throw Exception('API yapılandırması bulunamadı.');
+
+    // --- DEĞİŞİKLİK: Yeni API Yolu ---
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/MikroCashAsstesInfo/GetItemInventoryDetails'
+        : '${config.url}/mikro/MikroCashAsstesInfo/GetItemInventoryDetails';
+    
+    // Parametre olmadığı için queryParameters boş olacak, bu doğru.
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => InventoryStatusDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
 }
+
 // ...

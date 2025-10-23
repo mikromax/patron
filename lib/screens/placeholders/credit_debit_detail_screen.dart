@@ -4,7 +4,8 @@ import '../../models/account_credit_debit_status_dto.dart';
 import '../../models/nakit_varliklar_model.dart';
 import 'generic_placeholder_screen.dart';
 import 'statement_page_screen.dart';
-
+import '../customer_orders_screen.dart';
+import '../balance_aging_screen.dart';
 class CreditDebitDetailScreen extends StatelessWidget {
   final String pageTitle;
   final List<AccountCreditDebitStatusDto> details;
@@ -54,17 +55,33 @@ class CreditDebitDetailScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.history),
                   tooltip: 'Yaşlandırma Tablosu',
-                  onPressed: () => _navigateToPlaceholder(context, 'Yaşlandırma Tablosu'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BalanceAgingScreen(
+                          accountCode: detail.code,
+                          accountName: detail.definition,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.folder_open),
-                  tooltip: 'Açık Evraklar',
-                  onPressed: () => _navigateToPlaceholder(context, 'Açık Evraklar'),
-                ),
+                
                 IconButton(
                   icon: const Icon(Icons.shopping_cart_outlined),
                   tooltip: 'Siparişler',
-                  onPressed: () => _navigateToPlaceholder(context, 'Siparişler'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                      builder: (context) => CustomerOrdersScreen(
+                      accountCode: detail.code,
+                      accountName: detail.definition,
+                     ),
+                    ),
+                   );
+                 },
                 ),
                 IconButton(
                   icon: const Icon(Icons.shield_outlined),

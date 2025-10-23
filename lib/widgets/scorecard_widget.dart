@@ -6,9 +6,21 @@ import '../screens/placeholders/detail_grid_screen.dart';
 import '../screens/placeholders/generic_placeholder_screen.dart';
 import '../screens/credit_debit_barchart_screen.dart';
 import '../services/api_service.dart';
+import '../models/get_inventory_status_query.dart';
+import '../models/inventory_status_dto.dart';
 import '../models/account_credit_debit_status_dto.dart';
 import '../models/get_account_credit_debit_status_query.dart';
 import '../screens/placeholders/credit_debit_detail_screen.dart';
+import '../screens/placeholders/inventory_detail_screen.dart';
+import '../screens/inventory_grouped_barchart_screen.dart';
+import '../models/bank_credits_vm.dart';
+import '../models/get_bank_credits_query.dart';
+import '../screens/placeholders/bank_credits_detail_screen.dart';
+import '../screens/bank_credits_barchart_screen.dart';
+import '../models/nonecash_assets_vm.dart';
+import '../models/get_nonecash_assets_query.dart';
+import '../screens/placeholders/nonecash_assets_detail_screen.dart';
+import '../screens/nonecash_assets_barchart_screen.dart';
 // ... enum ve StatefulWidget tanımı aynı kalıyor ...
 enum ScorecardState { loading, success, error }
 
@@ -38,8 +50,10 @@ class _ScorecardWidgetState extends State<ScorecardWidget> {
   String _errorMessage = '';
   final ApiService _apiService = ApiService();
   NakitVarliklar? _data;
-List<AccountCreditDebitStatusDto>? _creditDebitData; 
-
+  List<AccountCreditDebitStatusDto>? _creditDebitData; 
+  List<InventoryStatusDto>? _inventoryData;
+  List<BankCreditsVM>? _bankCreditsData;
+  List<NonecashAssetsVM>? _noneCashAssetsData;
   @override
   void initState() {
     super.initState();
@@ -75,6 +89,24 @@ List<AccountCreditDebitStatusDto>? _creditDebitData;
           _currentState = ScorecardState.success;
         });
       }
+      else if (widget.apiEndpoint == 'stoklar') {
+        final data = await _apiService.getInventoryStatus(GetInventoryStatusQuery());
+        final total = data.fold(0.0, (sum, item) => sum + item.amountTl);
+        final formatter = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
+        setState(() { _inventoryData = data; _displayValue = formatter.format(total); _currentState = ScorecardState.success; });
+      }
+      else if (widget.apiEndpoint == 'krediler') {
+      final data = await _apiService.getBankCredits(GetBankCreditsQuery());
+      final total = data.fold(0.0, (sum, item) => sum + item.amountTl);
+       final formatter = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
+      setState(() { _bankCreditsData = data; _displayValue = formatter.format(total); _currentState = ScorecardState.success; });
+    }
+    else if (widget.apiEndpoint == 'degerli_kagitlar') {
+      final data = await _apiService.getNoneCashAssets(GetNoneCashAssetsQuery());
+      final total = data.fold(0.0, (sum, item) => sum + item.amount);
+      final formatter = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
+      setState(() { _noneCashAssetsData = data; _displayValue = formatter.format(total); _currentState = ScorecardState.success; });
+    }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -123,11 +155,17 @@ List<AccountCreditDebitStatusDto>? _creditDebitData;
             Navigator.push(context, MaterialPageRoute(builder: (context) => DetailGridScreen(pageTitle: '${widget.title} - Detaylar', details: _data!.details)));
           } else if (_creditDebitData != null) {
             Navigator.push(context, MaterialPageRoute(builder: (context) => CreditDebitDetailScreen(pageTitle: '${widget.title} - Detaylar', details: _creditDebitData!)));
-          }
+          } else if (_inventoryData != null) {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryDetailScreen(pageTitle: '${widget.title} - Detaylar', details: _inventoryData!)));
+          } else if (_bankCreditsData != null) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => BankCreditsDetailScreen(pageTitle: '${widget.title} - Detaylar', details: _bankCreditsData!)));
+      }
+      else if (_noneCashAssetsData != null) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => NonecashAssetsDetailScreen(pageTitle: '${widget.title} - Detaylar', details: _noneCashAssetsData!)));
+      }
         }
       : null,
                 ),
-                // --- DEĞİŞİKLİK BURADA ---
                 // Grafik Butonu
                 IconButton(
                   icon: const Icon(Icons.pie_chart, color: Colors.black54),
@@ -141,10 +179,18 @@ List<AccountCreditDebitStatusDto>? _creditDebitData;
                           else if ((widget.apiEndpoint == 'borclar' || widget.apiEndpoint == 'alacaklar') && _creditDebitData != null) {
                             Navigator.push(context, MaterialPageRoute(builder: (context) => CreditDebitBarChartScreen(pageTitle: widget.title, details: _creditDebitData!)));
                           }
+                          else if (widget.apiEndpoint == 'stoklar' && _inventoryData != null) {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryGroupedBarChartScreen(pageTitle: widget.title, details: _inventoryData!, groupBy: 'warehouse')));
+                          }
+                          else if (widget.apiEndpoint == 'krediler' && _bankCreditsData != null) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => BankCreditsBarChartScreen(pageTitle: widget.title, details: _bankCreditsData!)));
+      }
+      else if (widget.apiEndpoint == 'degerli_kagitlar' && _noneCashAssetsData != null) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => NonecashAssetsBarChartScreen(pageTitle: '${widget.title} (Tipe Göre)', details: _noneCashAssetsData!, groupBy: 'doctype')));
+      }
                         }
                       : null,
                 ),
-                // Menü Butonu (Aynı)
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, color: Colors.black54),
                   tooltip: 'Diğer Seçenekler',
@@ -152,19 +198,38 @@ List<AccountCreditDebitStatusDto>? _creditDebitData;
                   onSelected: (value) {
                     if (value == 'refresh') {
                       _fetchData();
-                    } else {
+                    } else if (value.startsWith('stok_grup_')) {
+                      final groupBy = value.split('_').last; // 'itemGroup' veya 'brand'
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryGroupedBarChartScreen(pageTitle: widget.title, details: _inventoryData!, groupBy: groupBy)));
+                    }else if (value == 'dk_pos_graph') {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => NonecashAssetsBarChartScreen(pageTitle: '${widget.title} (Pozisyona Göre)', details: _noneCashAssetsData!, groupBy: 'position')));
+      } else {
                       Navigator.push(context, MaterialPageRoute(
                         builder: (context) => GenericPlaceholderScreen(pageTitle: '${widget.title} - $value'),
                       ));
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'refresh', child: Text('Yenile')),
-                    const PopupMenuItem(value: 'Menu 2', child: Text('Menu 2')),
-                    const PopupMenuItem(value: 'Menu 3', child: Text('Menu 3')),
-                    const PopupMenuItem(value: 'Menu 4', child: Text('Menu 4')),
-                    const PopupMenuItem(value: 'Menu 5', child: Text('Menu 5')),
-                  ],
+                  itemBuilder: (context) {
+                    // Endpoint'e göre farklı menüler göster
+                    if (widget.apiEndpoint == 'stoklar') {
+                      return [
+                        const PopupMenuItem(value: 'refresh', child: Text('Yenile')),
+                        const PopupMenuItem(value: 'stok_grup_itemGroup', child: Text('Gruba Göre Grafik')),
+                        const PopupMenuItem(value: 'stok_grup_brand', child: Text('Markaya Göre Grafik')),
+                      ];
+                    } else if (widget.apiEndpoint == 'degerli_kagitlar') {
+        return [
+          const PopupMenuItem(value: 'refresh', child: Text('Yenile')),
+          const PopupMenuItem(value: 'dk_pos_graph', child: Text('Pozisyona Göre Grafik')),
+        ];
+      }
+                    // Varsayılan menü
+                    return [
+                      const PopupMenuItem(value: 'refresh', child: Text('Yenile')),
+                     
+                     
+                    ];
+                  },
                 ),
               ],
             ),

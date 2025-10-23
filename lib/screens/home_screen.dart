@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/scorecard_model.dart';
 import '../services/auth_service.dart';
 import '../widgets/scorecard_widget.dart';
 // Yeni AI Chat ekranımızı import ediyoruz (birazdan oluşturacağız)
@@ -26,13 +25,13 @@ class _HomeScreenState extends State<HomeScreen> {
       'title': 'Alacaklar', 'icon': Icons.trending_up, 'color': Colors.blueAccent, 'apiEndpoint': 'alacaklar'
     },
     {
-      'title': 'Krediler', 'icon': Icons.credit_card, 'color': Colors.orange, 'apiEndpoint': null
+      'title': 'Krediler', 'icon': Icons.credit_card, 'color': Colors.orange, 'apiEndpoint': 'krediler'
     },
     {
-      'title': 'Stoklar', 'icon': Icons.inventory, 'color': Colors.purple, 'apiEndpoint': null
+      'title': 'Stoklar', 'icon': Icons.inventory, 'color': Colors.purple, 'apiEndpoint': 'stoklar'
     },
     {
-      'title': 'Değerli Kağıtlar', 'icon': Icons.assessment, 'color': Colors.teal, 'apiEndpoint': null
+      'title': 'Değerli Kağıtlar', 'icon': Icons.assessment, 'color': Colors.teal, 'apiEndpoint': 'degerli_kagitlar'
     },
   ];
   
