@@ -2,8 +2,8 @@
 class OrdersByCustomerVM {
   final int orderType;
   final DateTime orderDate;
-  final String itemCode;
-  final String itemName;
+  final String code;
+  final String name;
   final double quantity;
   final String unit;
   final double amount;
@@ -14,8 +14,8 @@ class OrdersByCustomerVM {
   OrdersByCustomerVM({
     required this.orderType,
     required this.orderDate,
-    required this.itemCode,
-    required this.itemName,
+    required this.code,
+    required this.name,
     required this.quantity,
     required this.unit,
     required this.amount,
@@ -37,8 +37,8 @@ String get orderTypeText {
     return OrdersByCustomerVM(
       orderType: json['orderType'] as int,
       orderDate: DateTime.parse(json['orderDate'] as String),
-      itemCode: json['itemCode'] as String,
-      itemName: json['itemName'] as String,
+      code: json['code'] as String,
+      name: json['name'] as String,
       quantity: (json['quantity'] as num).toDouble(),
       unit: json['unit'] as String,
       amount: (json['amount'] as num).toDouble(),

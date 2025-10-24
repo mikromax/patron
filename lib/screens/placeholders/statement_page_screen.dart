@@ -1,4 +1,3 @@
-import 'dart:convert';
 import "dart:io";
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -10,7 +9,9 @@ import 'document_detail_screen.dart';
 import 'package:excel/excel.dart' hide Border; // Excel için gerekli
 import 'package:path_provider/path_provider.dart'; // Excel için gerekli
 import 'package:share_plus/share_plus.dart'; // Excel için gerekli
+import '../../models/get_customer_account_groups_query.dart';
 // Bu sınıflar ve enum'lar doğru, dokunmuyoruz
+enum StatementContext { cash, customer } //sayfanın nereden çağrıldığını tutmak için
 class LookupItem {
   final int value;
   final String text;
@@ -30,56 +31,70 @@ enum ApiCallState { idle, loading, success, error }
 
 class StatementPageScreen extends StatefulWidget {
   final Detail detail;
-  final LookupItem? preselectedGroup;
+  final StatementContext context; // YENİ ZORUNLU PARAMETRE
 
-  const StatementPageScreen({super.key, required this.detail, this.preselectedGroup});
+  const StatementPageScreen({super.key, required this.detail, required this.context});
 
   @override
   State<StatementPageScreen> createState() => _StatementPageScreenState();
 }
-
 class _StatementPageScreenState extends State<StatementPageScreen> {
   // State değişkenleri doğru, dokunmuyoruz
   bool _isPanelExpanded = true;
   late DateTime _startDate;
   late DateTime _endDate;
   LookupItem? _selectedGroup;
-  final List<LookupItem> _groupOptions = [
-    LookupItem(1, 'Mevduat'),
-  ];
+  List<LookupItem> _groupOptions = []; // Artık başlangıçta boş (Parametreden Gelecek)
+  bool _isLoadingGroups = false; // Grupları yüklemek için yeni state
   final ApiService _apiService = ApiService();
   ApiCallState _apiCallState = ApiCallState.idle;
   String _errorMessage = '';
   List<StatementDetailModel>? _statementData;
 
   //initState ve _fetchStatement fonksiyonları doğru, dokunmuyoruz
-  @override
+ @override
   void initState() {
     super.initState();
     _endDate = DateTime.now();
     _startDate = _endDate.subtract(const Duration(days: 7));
-     // Eğer dışarıdan bir grup geldiyse, onu kullan ve listeye ekle.
-    if (widget.preselectedGroup != null) {
-      _selectedGroup = widget.preselectedGroup;
-      // Listede zaten yoksa ekle
-      if (!_groupOptions.any((item) => item.value == widget.preselectedGroup!.value)) {
-        _groupOptions.add(widget.preselectedGroup!);
-      }
-    } else {
-      _selectedGroup = _groupOptions.first;
+    
+    // Contexte göre grupları yükle
+    if (widget.context == StatementContext.customer) {
+      _loadCustomerGroups();
+    }
+  }
+  Future<void> _loadCustomerGroups() async {
+    setState(() { _isLoadingGroups = true; });
+    try {
+      final groups = await _apiService.getCustomerAccountGroups(GetCustomerAccountGroupsQuery(customerCode: widget.detail.code));
+      setState(() {
+        _groupOptions = groups.map((g) => LookupItem(g.groupNo, g.currencySymbol)).toList();
+        if (_groupOptions.isNotEmpty) {
+          _selectedGroup = _groupOptions.first;
+        }
+        _isLoadingGroups = false;
+      });
+    } catch (e) {
+      setState(() { _isLoadingGroups = false; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hesap grupları yüklenemedi: $e')));
     }
   }
   Future<void> _fetchStatement() async {
-    if (_selectedGroup == null) return;
-    setState(() {
-      _apiCallState = ApiCallState.loading;
-      _isPanelExpanded = false;
-    });
+    int groupId;
+    if (widget.context == StatementContext.cash) {
+      groupId = 1; // Nakit Varlıklar için her zaman 1
+    } else {
+      if (_selectedGroup == null) return;
+      groupId = _selectedGroup!.value;
+    }
+
+    setState(() { _apiCallState = ApiCallState.loading; _isPanelExpanded = false; });
+
     final dto = AccountTransactionStatementDto(
       code: widget.detail.code,
       startDate: _startDate,
       endDate: _endDate,
-      group: _selectedGroup!.value,
+      group: groupId,
     );
     try {
       final data = await _apiService.getAccountStatement(dto);
@@ -161,22 +176,23 @@ class _StatementPageScreenState extends State<StatementPageScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<LookupItem>(
-            initialValue: _selectedGroup,
-            decoration: const InputDecoration(labelText: 'Grup', border: OutlineInputBorder()),
-            items: _groupOptions.map((item) {
-              return DropdownMenuItem<LookupItem>(
-                value: item,
-                child: Text(item.text),
-              );
-            }).toList(),
-            onChanged: (value) => setState(() => _selectedGroup = value),
-          ),
+          if (widget.context == StatementContext.customer)
+            _isLoadingGroups
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<LookupItem>(
+                    initialValue: _selectedGroup,
+                    decoration: const InputDecoration(labelText: 'Grup (Döviz)', border: OutlineInputBorder()),
+                    items: _groupOptions.map((item) {
+                      return DropdownMenuItem<LookupItem>(value: item, child: Text(item.text));
+                    }).toList(),
+                    onChanged: (value) => setState(() => _selectedGroup = value),
+                  ),
+          
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _fetchStatement,
+              onPressed: _isLoadingGroups ? null : _fetchStatement, // Gruplar yüklenirken butonu pasif yap
               child: const Text('Devam'),
             ),
           ),

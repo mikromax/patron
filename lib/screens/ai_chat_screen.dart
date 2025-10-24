@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart'; // Lottie paketini import ediyoruz
 import '../services/api_service.dart';
 import 'dynamic_data_grid_screen.dart';
 
@@ -9,7 +10,6 @@ class ChatMessage {
   final ChatParticipant participant;
   ChatMessage({required this.text, required this.participant});
 }
-
 
 class AIChatScreen extends StatefulWidget {
   const AIChatScreen({super.key});
@@ -22,40 +22,29 @@ class _AIChatScreenState extends State<AIChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
-  
-  // ApiService'i burada oluşturuyoruz
   final ApiService _apiService = ApiService();
 
-  // --- HANDLE SUBMITTED FONKSİYONUNUN İÇİ DOLDU ---
   void _handleSubmitted(String text) async {
     if (text.trim().isEmpty) return;
     _textController.clear();
 
-    // 1. Kullanıcının mesajını ve bir yükleniyor durumunu ekle
     setState(() {
       _messages.insert(0, ChatMessage(text: text, participant: ChatParticipant.user));
       _isLoading = true;
     });
 
     try {
-      // 2. ApiService'i çağır
       final resultData = await _apiService.getAiQueryResult(text);
       setState(() { _isLoading = false; });
-      
-      // 3. Başarılı ise, yeni grid ekranına yönlendir
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DynamicDataGridScreen(
-              title: text, // Sayfa başlığı olarak kullanıcının sorusunu kullan
-              data: resultData,
-            ),
+            builder: (context) => DynamicDataGridScreen(title: text, data: resultData),
           ),
         );
       }
     } catch (e) {
-      // 4. Hata var ise, hata mesajını sohbet ekranına ekle
       setState(() {
         _messages.insert(0, ChatMessage(text: 'Bir hata oluştu: ${e.toString()}', participant: ChatParticipant.model));
         _isLoading = false;
@@ -63,37 +52,82 @@ class _AIChatScreenState extends State<AIChatScreen> {
     }
   }
   
-  @override
+  
+
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('AI Asistanı')),
-      body: Column(
-        children: [
-          Expanded(
-            child: _messages.isEmpty
-                ? const Center(/* ... Hoşgeldiniz mesajı aynı ... */)
-                // Mesajları göstermek için ListView
-                : ListView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    reverse: true,
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      return _buildMessageBubble(_messages[index]);
-                    },
-                  ),
-          ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: CircularProgressIndicator(),
+      // --- DEĞİŞİKLİK 1: Scaffold'u SafeArea ile sarıyoruz ---
+      // Bu, içeriğin telefonun çentik (notch) veya alt bar gibi
+      // sistem alanlarına girmesini engeller.
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: _messages.isEmpty
+                  ? _buildWelcomeScreen()
+                  : _buildMessagesList(),
             ),
-          _buildTextComposer(),
-        ],
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: CircularProgressIndicator(),
+              ),
+            // --- DEĞİŞİKLİK 2: Chatbox'ı klavyeden korumak için Padding ekliyoruz ---
+            // Bu padding, klavye açıldığında onun kapladığı alan kadar
+            // chatbox'ı yukarı iter.
+            Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: _buildTextComposer(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // --- MESAJ BALONCUĞU TASARIMI ---
+
+
+  // --- YENİ WIDGET: HOŞ GELDİNİZ EKRANI VE ANİMASYON ---
+  Widget _buildWelcomeScreen() {
+    return Center(
+      child: SingleChildScrollView( // Küçük ekranlarda taşmayı önler
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Yeni Lottie animasyonu
+            Lottie.asset(
+              'assets/animations/ai_anim.json',
+              width: 200,
+              height: 200,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Verileriniz hakkında ne merak ediyorsunuz?',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Mesaj listesini oluşturan widget
+  Widget _buildMessagesList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(8.0),
+      reverse: true, // Mesajları aşağıdan yukarıya dizer
+      itemCount: _messages.length,
+      itemBuilder: (context, index) {
+        return _buildMessageBubble(_messages[index]);
+      },
+    );
+  }
+
+  // Mesaj baloncuklarını oluşturan widget (değişmedi)
   Widget _buildMessageBubble(ChatMessage message) {
     bool isUser = message.participant == ChatParticipant.user;
     return Container(
@@ -118,7 +152,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
       ),
     );
   }
-  
+
+  // Chatbox widget'ı (değişmedi)
   Widget _buildTextComposer() {
     return Padding(
       padding: const EdgeInsets.all(8.0),

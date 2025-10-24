@@ -85,7 +85,7 @@ class _CancelOrderScreenState extends State<CancelOrderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sipariş Kapat: ${widget.order.itemCode}')),
+      appBar: AppBar(title: Text('Sipariş Kapat: ${widget.order.code}')),
       body: _isLoadingReasons
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -97,7 +97,7 @@ class _CancelOrderScreenState extends State<CancelOrderScreen> {
                   children: [
                     // İptal Nedeni Lookup
                     DropdownButtonFormField<BaseCardViewModel>(
-                      value: _selectedReason,
+                      initialValue: _selectedReason,
                       decoration: const InputDecoration(labelText: 'Kapatma Nedeni', border: OutlineInputBorder()),
                       items: _cancelReasons?.map((reason) {
                         return DropdownMenuItem<BaseCardViewModel>(

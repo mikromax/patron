@@ -76,8 +76,9 @@ class CreditDebitDetailScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                       builder: (context) => CustomerOrdersScreen(
-                      accountCode: detail.code,
-                      accountName: detail.definition,
+                      code: detail.code,
+                      name: detail.definition,
+                      searchMode: OrderSearchMode.byCustomer,
                      ),
                     ),
                    );
@@ -98,7 +99,7 @@ class CreditDebitDetailScreen extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => StatementPageScreen(
                           detail: Detail(code: detail.code, definition: detail.definition, currency: detail.currency, amountOriginal: detail.amountOriginal, amountTl: detail.amountTl),
-                          preselectedGroup: LookupItem(detail.grup, detail.currency),
+                          context: StatementContext.customer,
                         ),
                       ),
                     );

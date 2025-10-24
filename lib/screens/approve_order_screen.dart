@@ -65,7 +65,7 @@ class _ApproveOrderScreenState extends State<ApproveOrderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sipariş Onayla: ${widget.order.itemCode}')),
+      appBar: AppBar(title: Text('Sipariş Onayla: ${widget.order.code}')),
       body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(

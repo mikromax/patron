@@ -16,6 +16,7 @@ dependencies:
   google_generative_ai: ^0.4.7
   http: ^1.5.0
   intl: ^0.20.2
+  lottie: ^3.3.0
   path_provider: ^2.1.5
   share_plus: ^12.0.0
   shared_preferences: ^2.5.3
@@ -33,9 +34,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-assets:
+  assets:
     - assets/data/
-    - assets/images/ 
+    - assets/images/
+    - assets/animations/ 
     - .env
 flutter_launcher_icons:
   android: true

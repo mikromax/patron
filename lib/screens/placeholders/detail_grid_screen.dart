@@ -112,7 +112,7 @@ class DetailGridScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => StatementPageScreen(detail: detail),
+                      builder: (context) => StatementPageScreen(detail: detail,context: StatementContext.cash,),
                     ),
                   );
                 },

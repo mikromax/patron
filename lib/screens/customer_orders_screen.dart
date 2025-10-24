@@ -5,12 +5,22 @@ import '../models/orders_by_customer_vm.dart';
 import '../services/api_service.dart';
 import 'approve_order_screen.dart';
 import 'cancel_order_screen.dart';
+import '../models/get_all_orders_by_item_query.dart';
+
+// Ekranın hangi modda çalışacağını belirtmek için bir enum
+enum OrderSearchMode { byCustomer, byItem }
 
 class CustomerOrdersScreen extends StatefulWidget {
-  final String accountCode;
-  final String accountName;
+  final String code;
+  final String name;
+  final OrderSearchMode searchMode;
 
-  const CustomerOrdersScreen({super.key, required this.accountCode, required this.accountName});
+  const CustomerOrdersScreen({
+    super.key, 
+    required this.code, 
+    required this.name,
+    required this.searchMode,
+  });
 
   @override
   State<CustomerOrdersScreen> createState() => _CustomerOrdersScreenState();
@@ -30,15 +40,19 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
   }
 
   // API'den veri çeken fonksiyon
-  Future<List<OrdersByCustomerVM>> _fetchOrders() {
-    final query = GetAllOrdersByCustomerQuery(accountCode: widget.accountCode);
-    return _apiService.searchOrdersByCustomer(query);
+ Future<List<OrdersByCustomerVM>> _fetchOrders() {
+    // Arama moduna göre doğru API metodunu çağır
+    if (widget.searchMode == OrderSearchMode.byCustomer) {
+      return _apiService.searchOrdersByCustomer(GetAllOrdersByCustomerQuery(accountCode: widget.code));
+    } else { // byItem
+      return _apiService.searchOrdersByItem(GetAllOrdersByItemQuery(itemCode: widget.code));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.accountName} - Siparişler')),
+      appBar: AppBar(title: Text('${widget.name} - Siparişler')),
       body: FutureBuilder<List<OrdersByCustomerVM>>(
         future: _ordersFuture,
         builder: (context, snapshot) {
@@ -64,7 +78,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
           }
           // Başarılı ama veri yok durumu
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Bu cariye ait bekleyen sipariş bulunamadı.'));
+            return const Center(child: Text(' bekleyen sipariş bulunamadı.'));
           }
 
           // Başarılı ve veri var durumu
@@ -109,7 +123,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
             ),
             const Divider(height: 16),
             // Orta Bölüm: Stok Bilgileri
-            Text('${order.itemCode} - ${order.itemName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text('${order.code} - ${order.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

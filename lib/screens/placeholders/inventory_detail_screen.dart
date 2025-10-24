@@ -4,7 +4,12 @@ import 'package:intl/intl.dart';
 // Gerekli import'ları ekliyoruz
 import '../../models/nakit_varliklar_model.dart';
 import 'statement_page_screen.dart';
-
+import '../customer_orders_screen.dart';
+import '../item_prices_screen.dart';
+import '../item_transactions_screen.dart';
+import '../../models/item_transaction_statement_query.dart';
+import '../../models/item_last_transactions_query.dart';
+import '../../services/api_service.dart';
 class InventoryDetailScreen extends StatelessWidget {
   final String pageTitle;
   final List<InventoryStatusDto> details;
@@ -48,6 +53,83 @@ class InventoryDetailScreen extends StatelessWidget {
     final warehouses = items.map((item) => item.warehouse).toSet().join(', ');
     final firstItem = items.first;
 
+void showDateRangePickerAndNavigate(BuildContext context, InventoryStatusDto item) {
+      DateTime startDate = DateTime.now().subtract(const Duration(days: 30));
+      DateTime endDate = DateTime.now();
+showDialog(
+        context: context,
+        builder: (dialogContext) {
+          // Diyalog içindeki tarihlerin güncellenebilmesi için StatefulBuilder kullanıyoruz
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final formatter = DateFormat('dd.MM.yyyy');
+              return AlertDialog(
+                title: const Text('Föy İçin Tarih Aralığı Seçin'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Başlangıç Tarihi
+                    ListTile(
+                      title: const Text('Başlangıç Tarihi'),
+                      subtitle: Text(formatter.format(startDate)),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final picked = await showDatePicker(context: context, initialDate: startDate, firstDate: DateTime(2000), lastDate: DateTime.now());
+                        if (picked != null) {
+                          setDialogState(() => startDate = picked);
+                        }
+                      },
+                    ),
+                    // Bitiş Tarihi
+                    ListTile(
+                      title: const Text('Bitiş Tarihi'),
+                      subtitle: Text(formatter.format(endDate)),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final picked = await showDatePicker(context: context, initialDate: endDate, firstDate: startDate, lastDate: DateTime.now());
+                        if (picked != null) {
+                          setDialogState(() => endDate = picked);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('İptal'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final apiService = ApiService();
+                      final future = apiService.getItemTransactionStatement(
+                        ItemTransactionStatementQuery(itemCode: item.itemCode, startDate: startDate, endDate: endDate)
+                      );
+                      
+                      // Önce diyalogu kapat, sonra yeni sayfaya git
+                      Navigator.pop(dialogContext);
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) => ItemTransactionsScreen(
+                          pageTitle: '${item.itemName} - Föy', 
+                          transactionsFuture: future,
+                          mode: TransactionScreenMode.statement,
+                        ),
+                      ));
+                    },
+                    child: const Text('Göster'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    
+}
+
+
+
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: Padding(
@@ -71,11 +153,56 @@ class InventoryDetailScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                IconButton(icon: const Icon(Icons.list_alt), tooltip: 'Föy', onPressed: () => _navigateToStatement(context, firstItem)),
-                IconButton(icon: const Icon(Icons.arrow_downward), tooltip: 'Son 10 Giriş', onPressed: () => _navigateToPlaceholder(context, 'Son 10 Giriş')),
-                IconButton(icon: const Icon(Icons.arrow_upward), tooltip: 'Son 10 Çıkış', onPressed: () => _navigateToPlaceholder(context, 'Son 10 Çıkış')),
-                IconButton(icon: const Icon(Icons.sell_outlined), tooltip: 'Fiyat Listesi', onPressed: () => _navigateToPlaceholder(context, 'Fiyat Listesi')),
-                IconButton(icon: const Icon(Icons.inventory_2_outlined), tooltip: 'Bekleyen Siparişler', onPressed: () => _navigateToPlaceholder(context, 'Bekleyen Siparişler')),
+                IconButton(icon: const Icon(Icons.list_alt), tooltip: 'Föy', 
+                onPressed: () => showDateRangePickerAndNavigate(context, firstItem),
+
+                ),
+                IconButton(icon: const Icon(Icons.arrow_downward), tooltip: 'Son 10 Giriş', 
+                onPressed: () {
+                    final apiService = ApiService();
+                    final future = apiService.getItemLastTransactions(
+                      ItemLastTransactionsQuery(itemCode: firstItem.itemCode, transactionType: 0) // Giriş için 0
+                    );
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => ItemTransactionsScreen(pageTitle: 'Son 10 Giriş', transactionsFuture: future,mode: TransactionScreenMode.lastEntries,),
+                    ));
+                  },
+                ),
+                IconButton(icon: const Icon(Icons.arrow_upward), tooltip: 'Son 10 Çıkış', 
+                onPressed: () {
+                    final apiService = ApiService();
+                    final future = apiService.getItemLastTransactions(
+                      ItemLastTransactionsQuery(itemCode: firstItem.itemCode, transactionType: 1) // Çıkış için 1
+                    );
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => ItemTransactionsScreen(pageTitle: 'Son 10 Çıkış', transactionsFuture: future, mode: TransactionScreenMode.lastExits, ),
+                    ));
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.sell_outlined), 
+                  tooltip: 'Fiyat Listesi', 
+                  onPressed: ()  {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => ItemPricesScreen(
+                        itemCode: firstItem.itemCode,
+                        itemName: firstItem.itemName,
+                      ),
+    ));
+                  }),
+                IconButton(
+                  icon: const Icon(Icons.inventory_2_outlined), 
+                  tooltip: 'Bekleyen Siparişler', 
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(
+                    builder: (context) => CustomerOrdersScreen(
+                    code: firstItem.itemCode,
+                    name: firstItem.itemName,
+                    searchMode: OrderSearchMode.byItem, // Arama modunu belirt
+                 ),
+                 ));
+                 },
+                  ),
               ],
             )
           ],
@@ -101,6 +228,6 @@ class InventoryDetailScreen extends StatelessWidget {
     // Föy sayfası 'Detail' beklediği için geçici bir nesne oluşturuyoruz.
     // Bu, gelecekte Föy sayfasını daha jenerik hale getirerek iyileştirilebilir.
     final tempDetail = Detail(code: item.itemCode, definition: item.itemName, currency: '', amountOriginal: 0, amountTl: item.amountTl);
-    Navigator.push(context, MaterialPageRoute(builder: (context) => StatementPageScreen(detail: tempDetail)));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => StatementPageScreen(detail: tempDetail,context:StatementContext.cash)));
   }
 }

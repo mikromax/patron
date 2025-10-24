@@ -21,6 +21,14 @@ import '../models/cancel_with_quantity_command.dart';
 import '../models/approve_with_quantity_command.dart';
 import '../models/balance_aging_chart_vm.dart';
 import '../models/get_account_balance_aging_chart_query.dart';
+import '../models/customer_account_group_dto.dart';
+import '../models/get_customer_account_groups_query.dart';
+import '../models/get_all_orders_by_item_query.dart';
+import '../models/item_price_dto.dart';
+import '../models/get_item_prices_query.dart';
+import '../models/item_transaction_dto.dart';
+import '../models/item_transaction_statement_query.dart';
+import '../models/item_last_transactions_query.dart';
 class ApiService {
   final _configService = ConfigService();
   final _authService = AuthService();
@@ -64,6 +72,150 @@ class ApiService {
       // Bu, 401 gibi durumlarda daha fazla bilgi verebilir.
       final responseBody = response.body;
       throw Exception('API Sunucu Hatası: ${response.statusCode}\nYanıt: $responseBody');
+    }
+  }
+
+Future<List<ItemPriceDto>> getItemAllPrices(GetItemPricesQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/Item/GetItemAllPrices'
+        : '${config.url}/mikro/Item/GetItemAllPrices';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => ItemPriceDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+Future<List<ItemTransactionDto>> getItemTransactionStatement(ItemTransactionStatementQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/Item/ItemTransactionStatement'
+        : '${config.url}/mikro/Item/ItemTransactionStatement';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+      return resultModel.result!
+            .map((item) => ItemTransactionDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+  Future<List<ItemTransactionDto>> getItemLastTransactions(ItemLastTransactionsQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/Item/ItemLastTransactions'
+        : '${config.url}/mikro/Item/ItemLastTransactions';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+      return resultModel.result!
+            .map((item) => ItemTransactionDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+  Future<List<OrdersByCustomerVM>> searchOrdersByItem(GetAllOrdersByItemQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/Order/SearchOrdersByItem'
+        : '${config.url}/mikro/Order/SearchOrdersByItem';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+    final headers = {'Authorization': 'Bearer $token'};
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => OrdersByCustomerVM.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
+    }
+  }
+  Future<List<CustomerAccountGroupDto>> getCustomerAccountGroups(GetCustomerAccountGroupsQuery query) async {
+    final token = await _authService.getToken();
+    final config = await _configService.getDefaultConfig();
+    if (token == null || config == null) throw Exception('Yapılandırma veya giriş hatası.');
+
+    final baseUrl = config.url.endsWith('/')
+        ? '${config.url}mikro/Customer/GetCustomerAccountGroups'
+        : '${config.url}/mikro/Customer/GetCustomerAccountGroups';
+    
+    final uri = Uri.parse(baseUrl).replace(queryParameters: query.toQueryParameters());
+     final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final resultModel = ResultModel<List<dynamic>>.fromJson(jsonResponse);
+
+      if (resultModel.isSuccessful && resultModel.result != null) {
+        return resultModel.result!
+            .map((item) => CustomerAccountGroupDto.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('API Sunucu Hatası: ${response.statusCode}');
     }
   }
   Future<List<BalanceAgingChartVM>> getAccountBalanceAgingChart(GetAccountBalanceAgingChartQuery query) async {
