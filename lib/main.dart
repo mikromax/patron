@@ -8,6 +8,10 @@ import 'screens/config_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/config_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:patron/services/api/core/api_client.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -23,6 +27,7 @@ void main() async {
 
   final configService = ConfigService();
   final authService = AuthService();
+  ApiClient.initialize(navigatorKey);
 List<ApiConfig> configs = await configService.getConfigs();
   
 
@@ -70,6 +75,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Yönetici Paneli',
+      navigatorKey: navigatorKey,
       initialRoute: initialRoute,
       routes: {
         '/home': (context) => const HomeScreen(),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/base_card_view_model.dart';
+import '../models/Helpers/base_card_view_model.dart';
 import '../models/cancel_with_quantity_command.dart';
 import '../models/order_line_cancel_dto.dart';
 import '../models/orders_by_customer_vm.dart';
-import '../services/api_service.dart';
+import '../services/api/orders_api.dart';
 
 class CancelOrderScreen extends StatefulWidget {
   final OrdersByCustomerVM order;
@@ -15,7 +15,7 @@ class CancelOrderScreen extends StatefulWidget {
 
 class _CancelOrderScreenState extends State<CancelOrderScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _apiService = ApiService();
+  final _apiService = OrdersApi();
 
   // Form elemanları ve state'leri
   late TextEditingController _quantityController;

@@ -55,6 +55,26 @@ bool _isDemoProfile = false;
           _passwordController.text,
         );
         if (success && mounted) {
+          // Giriş başarılı, şimdi widget yetkilerini çek ve kaydet
+             try {
+            await _authService.registerSession();
+          } catch (e) {
+            throw Exception('Session kaydı başarısız: $e');
+          }
+           try {
+             await _authService.fetchAndSaveCurrentContext();
+
+          } catch (e) {
+            throw Exception('Session kaydı başarısız: $e');
+          }
+          try {
+            await _authService.fetchAndSaveWidgetPermissions();
+          } catch (e) {
+            // Yetki çekme başarısız olsa bile girişe izin ver, 
+            // ana ekran bu durumu yönetebilir.
+            debugPrint(e.toString());
+          }
+       
           Navigator.pushReplacementNamed(context, '/home');
         }
       } catch (e) {

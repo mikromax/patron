@@ -4,23 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+// Artık StatefulWidget değil, basit bir StatelessWidget
 class DynamicDataGridScreen extends StatelessWidget {
   final String title;
   final List<Map<String, dynamic>> data;
 
-  const DynamicDataGridScreen({super.key, required this.title, required this.data});
+  // Constructor'dan queryLogId kaldırıldı
+  const DynamicDataGridScreen({
+    super.key, 
+    required this.title, 
+    required this.data,
+  });
 
+  // _exportToExcelAndShare fonksiyonunu buraya taşıdık
   Future<void> _exportToExcelAndShare(BuildContext context) async {
     if (data.isEmpty) return;
     var excel = Excel.createExcel();
     Sheet sheetObject = excel[excel.getDefaultSheet()!];
-   
-
-    // Başlıkları verinin ilk satırının anahtarlarından dinamik olarak al
     List<String> headerList = data.first.keys.toList();
     sheetObject.appendRow(headerList.map((col) => TextCellValue(col)).toList());
 
-    // Veri satırlarını dinamik olarak ekle
     for (var rowData in data) {
       List<CellValue> row = headerList.map((key) {
         final value = rowData[key];
@@ -38,7 +41,13 @@ class DynamicDataGridScreen extends StatelessWidget {
     if (fileBytes != null) {
       final file = File(path)..writeAsBytesSync(fileBytes);
       if (!context.mounted) return;
-      await Share.shareXFiles([XFile(file.path)], text: title);
+      if (Platform.isAndroid || Platform.isIOS) {
+    // Mobilde: Paylaşım menüsünü aç
+    await Share.shareXFiles([XFile(file.path)], text: title);
+  } else if (Platform.isWindows) {
+    // Windows'ta: Dosyanın kaydedildiği klasörü aç
+    await Process.run('explorer.exe', ['/select,', file.path]);
+  }
     }
   }
 
@@ -47,9 +56,7 @@ class DynamicDataGridScreen extends StatelessWidget {
     if (data.isEmpty) {
       return Scaffold(appBar: AppBar(title: Text(title)), body: const Center(child: Text('Görüntülenecek veri yok.')));
     }
-
-    // Kolon başlıklarını ilk veri satırından al
-    final columns = data.first.keys.map((key) => DataColumn(label: Text(key))).toList();
+    final columns = data.first.keys.map((key) => DataColumn(label: Text(key, style: const TextStyle(fontWeight: FontWeight.bold)))).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -62,6 +69,8 @@ class DynamicDataGridScreen extends StatelessWidget {
           ),
         ],
       ),
+      // --- DEĞİŞİKLİK: Column ve Feedback butonları kaldırıldı ---
+      // Body artık doğrudan kaydırılabilir tablodur.
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: SingleChildScrollView(

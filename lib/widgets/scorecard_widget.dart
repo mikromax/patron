@@ -5,7 +5,7 @@ import '../screens/syncfusion_pie_chart_screen.dart';
 import '../screens/placeholders/detail_grid_screen.dart';
 import '../screens/placeholders/generic_placeholder_screen.dart';
 import '../screens/credit_debit_barchart_screen.dart';
-import '../services/api_service.dart';
+import '../services/api/dashboard_api.dart';
 import '../models/get_inventory_status_query.dart';
 import '../models/inventory_status_dto.dart';
 import '../models/account_credit_debit_status_dto.dart';
@@ -21,6 +21,7 @@ import '../models/nonecash_assets_vm.dart';
 import '../models/get_nonecash_assets_query.dart';
 import '../screens/placeholders/nonecash_assets_detail_screen.dart';
 import '../screens/nonecash_assets_barchart_screen.dart';
+import '../services/api/inventory_api.dart';
 // ... enum ve StatefulWidget tanımı aynı kalıyor ...
 enum ScorecardState { loading, success, error }
 
@@ -48,7 +49,8 @@ class _ScorecardWidgetState extends State<ScorecardWidget> {
   ScorecardState _currentState = ScorecardState.loading;
   String _displayValue = '';
   String _errorMessage = '';
-  final ApiService _apiService = ApiService();
+  final DashboardApi _apiService = DashboardApi();
+  final InventoryApi _apiInventory = InventoryApi();
   NakitVarliklar? _data;
   List<AccountCreditDebitStatusDto>? _creditDebitData; 
   List<InventoryStatusDto>? _inventoryData;
@@ -90,7 +92,7 @@ class _ScorecardWidgetState extends State<ScorecardWidget> {
         });
       }
       else if (widget.apiEndpoint == 'stoklar') {
-        final data = await _apiService.getInventoryStatus(GetInventoryStatusQuery());
+        final data = await _apiInventory.getInventoryStatus(GetInventoryStatusQuery());
         final total = data.fold(0.0, (sum, item) => sum + item.amountTl);
         final formatter = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
         setState(() { _inventoryData = data; _displayValue = formatter.format(total); _currentState = ScorecardState.success; });

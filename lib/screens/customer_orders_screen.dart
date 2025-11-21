@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/get_all_orders_by_customer_query.dart';
 import '../models/orders_by_customer_vm.dart';
-import '../services/api_service.dart';
+import '../services/api/orders_api.dart';
 import 'approve_order_screen.dart';
 import 'cancel_order_screen.dart';
 import '../models/get_all_orders_by_item_query.dart';
+import '../services/api/inventory_api.dart';
 
 // Ekranın hangi modda çalışacağını belirtmek için bir enum
 enum OrderSearchMode { byCustomer, byItem }
@@ -27,8 +28,8 @@ class CustomerOrdersScreen extends StatefulWidget {
 }
 
 class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
-  final ApiService _apiService = ApiService();
-  
+  final OrdersApi _apiService = OrdersApi();
+  final InventoryApi _apiInventory = InventoryApi();
   // State yönetimi için değişkenler
   late Future<List<OrdersByCustomerVM>> _ordersFuture;
 
@@ -45,7 +46,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
     if (widget.searchMode == OrderSearchMode.byCustomer) {
       return _apiService.searchOrdersByCustomer(GetAllOrdersByCustomerQuery(accountCode: widget.code));
     } else { // byItem
-      return _apiService.searchOrdersByItem(GetAllOrdersByItemQuery(itemCode: widget.code));
+      return _apiInventory.searchOrdersByItem(GetAllOrdersByItemQuery(itemCode: widget.code));
     }
   }
 

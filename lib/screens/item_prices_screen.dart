@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/get_item_prices_query.dart';
 import '../models/item_price_dto.dart';
-import '../services/api_service.dart';
+import '../services/api/inventory_api.dart';
 
 class ItemPricesScreen extends StatefulWidget {
   final String itemCode;
@@ -16,7 +16,7 @@ class ItemPricesScreen extends StatefulWidget {
 }
 
 class _ItemPricesScreenState extends State<ItemPricesScreen> {
-  final ApiService _apiService = ApiService();
+  final InventoryApi _apiService = InventoryApi();
   late Future<List<ItemPriceDto>> _pricesFuture;
 
   @override

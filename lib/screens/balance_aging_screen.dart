@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/balance_aging_chart_item_vm.dart';
 import '../models/balance_aging_chart_vm.dart';
 import '../models/get_account_balance_aging_chart_query.dart';
-import '../services/api_service.dart';
+import '../services/api/finance_api.dart';
 
 class BalanceAgingScreen extends StatefulWidget {
   final String accountCode;
@@ -17,7 +17,7 @@ class BalanceAgingScreen extends StatefulWidget {
 }
 
 class _BalanceAgingScreenState extends State<BalanceAgingScreen> {
-  final ApiService _apiService = ApiService();
+  final FinanceApi _apiService = FinanceApi();
   late Future<List<BalanceAgingChartVM>> _agingFuture;
 
   @override

@@ -9,7 +9,7 @@ import '../item_prices_screen.dart';
 import '../item_transactions_screen.dart';
 import '../../models/item_transaction_statement_query.dart';
 import '../../models/item_last_transactions_query.dart';
-import '../../services/api_service.dart';
+import '../../services/api/inventory_api.dart';
 class InventoryDetailScreen extends StatelessWidget {
   final String pageTitle;
   final List<InventoryStatusDto> details;
@@ -101,7 +101,7 @@ showDialog(
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      final apiService = ApiService();
+                      final apiService = InventoryApi();
                       final future = apiService.getItemTransactionStatement(
                         ItemTransactionStatementQuery(itemCode: item.itemCode, startDate: startDate, endDate: endDate)
                       );
@@ -159,7 +159,7 @@ showDialog(
                 ),
                 IconButton(icon: const Icon(Icons.arrow_downward), tooltip: 'Son 10 Giriş', 
                 onPressed: () {
-                    final apiService = ApiService();
+                    final apiService = InventoryApi();
                     final future = apiService.getItemLastTransactions(
                       ItemLastTransactionsQuery(itemCode: firstItem.itemCode, transactionType: 0) // Giriş için 0
                     );
@@ -170,7 +170,7 @@ showDialog(
                 ),
                 IconButton(icon: const Icon(Icons.arrow_upward), tooltip: 'Son 10 Çıkış', 
                 onPressed: () {
-                    final apiService = ApiService();
+                    final apiService = InventoryApi();
                     final future = apiService.getItemLastTransactions(
                       ItemLastTransactionsQuery(itemCode: firstItem.itemCode, transactionType: 1) // Çıkış için 1
                     );

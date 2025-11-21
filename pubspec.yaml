@@ -7,22 +7,33 @@ environment:
   sdk: ^3.9.2
 
 dependencies:
+  device_info_plus: ^12.2.0
+  dio: ^5.9.0
+  dropdown_search: 5.0.6
   excel: ^4.0.6
+  file_picker: ^10.3.6
   fl_chart: ^1.1.1
   flutter:
     sdk: flutter
   flutter_dotenv: ^6.0.0
   flutter_secure_storage: ^9.2.4
+  flutter_simple_treeview: ^3.0.2
   google_generative_ai: ^0.4.7
   http: ^1.5.0
+  image_picker: ^1.2.1
   intl: ^0.20.2
   lottie: ^3.3.0
+  open_filex: ^4.7.0
+  package_info_plus: ^9.0.0
+  path: ^1.9.1
   path_provider: ^2.1.5
+  permission_handler: ^12.0.1
   share_plus: ^12.0.0
   shared_preferences: ^2.5.3
+  speech_to_text: ^7.3.0
   syncfusion_flutter_charts: ^31.1.23
   syncfusion_flutter_core: ^31.1.23
-  syncfusion_flutter_datagrid: ^31.1.23
+  syncfusion_flutter_datagrid: ^31.2.10
   url_launcher: ^6.3.2
   uuid: ^4.5.1
 
@@ -42,7 +53,7 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/icon.png"
+  image_path: "assets/icon/app_icon.ico"
   
   # Sadece Android için modern adaptif ikon ayarları
   adaptive_icon_background: "#FFFFFF" # İkonunuzun arkasında görünecek renk (örn: beyaz)

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart'; // Lottie paketini import ediyoruz
-import '../services/api_service.dart';
+import '../services/api/ai_api.dart';
 import 'dynamic_data_grid_screen.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'dart:io';
 
 // ... ChatMessage ve ChatParticipant tanımları aynı kalıyor ...
 enum ChatParticipant { user, model }
@@ -22,8 +24,36 @@ class _AIChatScreenState extends State<AIChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
-  final ApiService _apiService = ApiService();
-
+  final AiApi _apiService = AiApi();
+  final SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  bool _isListening = false;
+  @override
+  void initState() {
+    super.initState();
+    _initSpeech();
+  }
+  void _initSpeech() async {
+    _speechEnabled = await _speechToText.initialize();
+    setState(() {});
+  }
+  void _listen() async {
+    if (_isListening) {
+      await _speechToText.stop();
+      setState(() => _isListening = false);
+    } else {
+      if (_speechEnabled) {
+        setState(() => _isListening = true);
+        _speechToText.listen(
+          onResult: (result) {
+            setState(() {
+              _textController.text = result.recognizedWords;
+            });
+          },
+        );
+      }
+    }
+  }
   void _handleSubmitted(String text) async {
     if (text.trim().isEmpty) return;
     _textController.clear();
@@ -34,13 +64,19 @@ class _AIChatScreenState extends State<AIChatScreen> {
     });
 
     try {
+      // Artık DTO göndermiyoruz, sadece metni gönderiyoruz
       final resultData = await _apiService.getAiQueryResult(text);
       setState(() { _isLoading = false; });
+      
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DynamicDataGridScreen(title: text, data: resultData),
+            builder: (context) => DynamicDataGridScreen(
+              title: text,
+              data: resultData,
+              // --- DEĞİŞİKLİK: queryLogId parametresi kaldırıldı ---
+            ),
           ),
         );
       }
@@ -74,7 +110,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
                 padding: EdgeInsets.symmetric(vertical: 8.0),
                 child: CircularProgressIndicator(),
               ),
-            // --- DEĞİŞİKLİK 2: Chatbox'ı klavyeden korumak için Padding ekliyoruz ---
             // Bu padding, klavye açıldığında onun kapladığı alan kadar
             // chatbox'ı yukarı iter.
             Padding(
@@ -170,6 +205,13 @@ class _AIChatScreenState extends State<AIChatScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          if (Platform.isAndroid || Platform.isIOS)
+          IconButton(
+            icon: Icon(_isListening ? Icons.mic_off : Icons.mic),
+            color: _isListening ? Theme.of(context).primaryColor : null,
+            tooltip: 'Sesli Komut',
+            onPressed: _speechEnabled ? _listen : null, // Servis başlamadıysa pasif
+          ),
           IconButton(
             icon: const Icon(Icons.send),
             onPressed: _isLoading ? null : () => _handleSubmitted(_textController.text),

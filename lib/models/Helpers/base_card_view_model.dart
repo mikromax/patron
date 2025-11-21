@@ -20,4 +20,12 @@ class BaseCardViewModel {
       isPassive: json['isPassive'] as bool,
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'code': code,
+      'description': description,
+      'isPassive': isPassive,
+    };
+  }
 }
